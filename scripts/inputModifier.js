@@ -58,6 +58,7 @@ const getRandomPrompt = () => {
 	const promptInfo = getRandomPromptInfo()
 	let promptText = ""
 	let promptWear = ""
+	let wearInfo = null
 	if(promptInfo != undefined){
 		//prompt
 		if(promptInfo.entry != undefined){
@@ -72,10 +73,16 @@ const getRandomPrompt = () => {
 			}
 			if(dress){
 				promptWear = getRandomDress(dress)
+				wearInfo = getRandomDressInfo(dress)
 			}
 		}
 	}
+	applyToMemory(promptInfo,wearInfo)
 	return composeFinalPrompt(promptText, promptWear)
+}
+
+const applyToMemory=(promptInfo,wearInfo)=>{
+	
 }
 
 const getRandomDress=(key) =>{
@@ -92,7 +99,7 @@ const getRandomDressInfo=(key) =>{
 	const specificRegex = getWorldInfoKeyRegex(key)
 	const promptInfoList = worldInfo?.filter(entry => entry.type.match(dressRegex))?.filter(entry => entry.type.match(specificRegex))
 	const index = Math.floor((Math.random() * promptInfoList.length));
-	let result = ""
+	let result = null
 	if (index < promptInfoList.length){
 		result = promptInfoList[index];
 	}
@@ -102,8 +109,7 @@ const getRandomDressInfo=(key) =>{
 const modifier = (text) => {
   let modifiedText = text
   if(!state.myrha_prompt_initialised){
-    //state.myrha_prompt_initialised=true;
-state.myrha_prompt_initialised=false;
+    state.myrha_prompt_initialised=true;
     modifiedText+= getRandomPrompt()
   }
   
