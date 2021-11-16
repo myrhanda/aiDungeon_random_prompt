@@ -8,6 +8,8 @@ const WORLD_INFO_KEY_REGEX_SUFFIX = ')(?:_(?<digits>\\d+))?(?:\\s*,|\\s*$)'
 const PROMPT_KEY = 'myrha_prompt'
 const DRESS_KEY = 'myrha_dress'
 
+const CONTEXT_KEY=['submissive']
+
 const getWorldInfoKeyRegex = (key) => {
   return RegExp(WORLD_INFO_KEY_REGEX_PREFIX + key + WORLD_INFO_KEY_REGEX_SUFFIX, 'i')
 }
@@ -17,9 +19,16 @@ const getWorldInfoEntriesByKey = (key) => {
   return worldEntries?.filter(entry => entry.keys.match(regex))
 }
 
+
 const getRandomPromptInfo = () => {
-  const regex = getWorldInfoKeyRegex(PROMPT_KEY)
-  const promptInfoList = worldInfo?.filter(entry => entry.type.match(regex))
+  let regex = getWorldInfoKeyRegex(PROMPT_KEY)
+  let promptInfoList = worldInfo?.filter(entry => entry.type.match(regex))  
+	for (const context of CONTEXT_KEY) {
+	  console.log("context="+context)
+		regex = getWorldInfoKeyRegex(context)
+		promptInfoList = promptInfoList?.filter(entry => entry.type.match(regex))  
+	}
+	  console.log("promptInfoList="+JSON.stringify(promptInfoList))
   const index = Math.floor((Math.random() * promptInfoList.length));
   let result = ""
   if (index < promptInfoList.length){
@@ -29,12 +38,18 @@ const getRandomPromptInfo = () => {
 }
 
 const composeFinalPrompt=(promptText, promptWear)=>{
-  //return "compose: text="+promptText+" wear="+promptWear
-	if(promptText && promptWear){
-		return promptWear+"\n"+promptText
+	if(promptText.includes(DRESS_KEY)){
+	  console.log("trouvé "+DRESS_KEY)
+	  console.log("promptWear= "+promptWear)
+		return promptText.replace(DRESS_KEY,promptWear)
 	}
 	else{
-		return promptWear+""+promptText
+		if(promptText && promptWear){
+			return promptWear+"\n"+promptText
+		}
+		else{
+			return promptWear+""+promptText
+		}
 	}
 }
 
@@ -87,7 +102,8 @@ const getRandomDressInfo=(key) =>{
 const modifier = (text) => {
   let modifiedText = text
   if(!state.myrha_prompt_initialised){
-    state.myrha_prompt_initialised=true;
+    //state.myrha_prompt_initialised=true;
+state.myrha_prompt_initialised=false;
     modifiedText+= getRandomPrompt()
   }
   
