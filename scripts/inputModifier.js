@@ -8,7 +8,7 @@ const WORLD_INFO_KEY_REGEX_SUFFIX = ')(?:_(?<digits>\\d+))?(?:\\s*,|\\s*$)'
 const PROMPT_KEY = 'myrha_prompt'
 const DRESS_KEY = 'myrha_dress'
 
-const CONTEXT_KEY=['submissive']
+const CONTEXT_KEY=[]
 
 const getWorldInfoKeyRegex = (key) => {
   return RegExp(WORLD_INFO_KEY_REGEX_PREFIX + key + WORLD_INFO_KEY_REGEX_SUFFIX, 'i')
@@ -24,11 +24,9 @@ const getRandomPromptInfo = () => {
   let regex = getWorldInfoKeyRegex(PROMPT_KEY)
   let promptInfoList = worldInfo?.filter(entry => entry.type.match(regex))  
 	for (const context of CONTEXT_KEY) {
-	  console.log("context="+context)
 		regex = getWorldInfoKeyRegex(context)
 		promptInfoList = promptInfoList?.filter(entry => entry.type.match(regex))  
 	}
-	  console.log("promptInfoList="+JSON.stringify(promptInfoList))
   const index = Math.floor((Math.random() * promptInfoList.length));
   let result = ""
   if (index < promptInfoList.length){
@@ -39,8 +37,6 @@ const getRandomPromptInfo = () => {
 
 const composeFinalPrompt=(promptText, promptWear)=>{
 	if(promptText.includes(DRESS_KEY)){
-	  console.log("trouvé "+DRESS_KEY)
-	  console.log("promptWear= "+promptWear)
 		return promptText.replace(DRESS_KEY,promptWear)
 	}
 	else{
@@ -106,11 +102,22 @@ const getRandomDressInfo=(key) =>{
 	return result
 }
 
+const clearPrompts=()=>{
+	let len = worldInfo.length
+	const regex = getWorldInfoKeyRegex(PROMPT_KEY)
+	for (let i = 0; i < len; i++) {
+		if(worldInfo[i]?.type?.match(regex)){
+			removeWorldEntry(i)
+		}
+	}
+}
+
 const modifier = (text) => {
   let modifiedText = text
   if(!state.myrha_prompt_initialised){
     state.myrha_prompt_initialised=true;
-    modifiedText+= getRandomPrompt()
+    modifiedText+= '\n'+getRandomPrompt()
+	clearPrompts()
   }
   
   // You must return an object with the text property defined.
