@@ -73,12 +73,30 @@ const getRandomPrompt = () => {
 			}
 		}
 	}
-	applyToMemory(promptInfo,wearInfo)
+	registerMemory(promptInfo)
 	return composeFinalPrompt(promptText, promptWear)
 }
 
-const applyToMemory=(promptInfo,wearInfo)=>{
-	
+const registerMemory=(promptInfo)=>{
+	if(promptInfo){
+		const authorsNote = promptInfo.myrha_an
+		const memory = promptInfo.myrha_memory
+		if(authorsNote){
+			state.myrha_script.authorsNote=authorsNote			
+		}
+		if(memory){
+			state.myrha_script.memory=memory			
+		}
+	}
+}
+
+const applyMemory(){
+	if(state.myrha_script.authorsNote){
+		state.memory.authorsNote=state.myrha_script.authorsNote
+	}
+	if(state.myrha_script.memory){
+		state.memory.frontMemory=state.myrha_script.memory
+	}
 }
 
 const getRandomDress=(key) =>{
@@ -119,7 +137,7 @@ const modifier = (text) => {
     modifiedText+= '\n'+getRandomPrompt()
 	clearPrompts()
   }
-  
+  applyMemory()
   // You must return an object with the text property defined.
   return { text: modifiedText }
 }
