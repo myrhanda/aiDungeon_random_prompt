@@ -6,6 +6,7 @@ const WORLD_INFO_KEY_REGEX_PREFIX = '(?:^\\s*|,\\s*)(?<key>'
 const WORLD_INFO_KEY_REGEX_SUFFIX = ')(?:_(?<digits>\\d+))?(?:\\s*,|\\s*$)'
 
 const PROMPT_KEY = 'myrha_prompt'
+const RANDOM_KEY = '[RANDOM]'
 const DRESS_KEY = 'myrha_dress'
 
 const CONTEXT_KEY=[]
@@ -49,6 +50,34 @@ const composeFinalPrompt=(promptText, promptWear)=>{
 	}
 }
 
+const getRandomPromptBACK = () => {
+	//extraire le worldInfo
+	const promptInfo = getRandomPromptInfo()
+	let promptText = ""
+	let promptWear = ""
+	let wearInfo = null
+	if(promptInfo != undefined){
+		//prompt
+		if(promptInfo.entry != undefined){
+			promptText = promptInfo.entry
+		}
+		//wear pour ce prompt
+		const attributes=promptInfo.attributes
+		if(attributes){
+			let dress 
+			if(attributes.myrha_dress){
+			  dress=attributes.myrha_dress
+			}
+			if(dress){
+				promptWear = getRandomDress(dress)
+				wearInfo = getRandomDressInfo(dress)
+			}
+		}
+	}
+	registerMemory(promptInfo)
+	return composeFinalPrompt(promptText, promptWear)
+}
+
 const getRandomPrompt = () => {
 	//extraire le worldInfo
 	const promptInfo = getRandomPromptInfo()
@@ -77,10 +106,52 @@ const getRandomPrompt = () => {
 	return composeFinalPrompt(promptText, promptWear)
 }
 
+const applyParamsToPrompt= (worldInfo) =>{
+  console.log(JSON.stringify(worldInfo))
+	let entry=worldInfo.entry
+	if(!entry){
+		return
+	}
+	if(!worldInfo){
+		return worldInfo
+	}
+	if(!worldInfo.attributes){
+		return worldInfo
+	}
+	const keys = Object.keys(worldInfo.attributes)
+	if(!keys){
+		return
+	}
+	for(key of Object.keys(worldInfo.attributes)){
+		console.log("value="+worldInfo.attributes[key])
+		//chercher la clé dans le prompt. 
+		if(entry.includes(key)){
+			let value=worldInfo.attributes[key]
+			if(value){
+				if(value.startsWith(RANDOM_KEY)){
+					//extraire les clés
+					const keys = value.trim().split().shift()
+					getRandomDressByList(keys)
+					
+				}
+				else{
+					entry = entry.replace(key,value)
+				}
+			}
+		}
+	}	
+	worldInfo.entry=entry
+	return worldInfo
+}
+
 const registerMemory=(promptInfo)=>{
-	if(promptInfo){
-		const authorsNote = promptInfo.myrha_an
-		const memory = promptInfo.myrha_memory
+	state.myrha_script = Object.seal({
+	  authorsNote: null,
+	  memory: null
+	});
+	if(promptInfo && promptInfo.attributes){
+		const authorsNote = promptInfo.attributes.myrha_an
+		const memory = promptInfo.attributes.myrha_memory
 		if(authorsNote){
 			state.myrha_script.authorsNote=authorsNote			
 		}
@@ -90,11 +161,11 @@ const registerMemory=(promptInfo)=>{
 	}
 }
 
-const applyMemory(){
-	if(state.myrha_script.authorsNote){
+const applyMemory=()=>{
+	if(state.myrha_script.authorsNote && state.myrha_script.authorsNote != undefined){
 		state.memory.authorsNote=state.myrha_script.authorsNote
 	}
-	if(state.myrha_script.memory){
+	if(state.myrha_script.memory && state.myrha_script.memory != undefined){
 		state.memory.frontMemory=state.myrha_script.memory
 	}
 }
@@ -104,6 +175,22 @@ const getRandomDress=(key) =>{
 	let result=""
 	if(dressInfo){
 	  result=dressInfo.entry
+	}
+	return result
+}
+
+const getRandomDressByList=(keys) =>{
+	const dressesInfoList=[]
+	for(key of keys){
+		const dress=getRandomDress(key)
+		if(dress){
+			dressesInfoList.push(dress)
+		}
+	}
+	const index = Math.floor((Math.random() * dressesInfoList.length));
+	let result = null
+	if (index < dressesInfoList.length){
+		result = dressesInfoList[index];
 	}
 	return result
 }
