@@ -80,11 +80,14 @@ const getRandomPromptBACK = () => {
 
 const getRandomPrompt = () => {
 	//extraire le worldInfo
-	const promptInfo = getRandomPromptInfo()
+	let promptInfo = getRandomPromptInfo()
 	let promptText = ""
 	let promptWear = ""
 	let wearInfo = null
 	if(promptInfo != undefined){
+		//appliquer les parametres
+		promptInfo=applyParamsToPrompt(promptInfo)
+		
 		//prompt
 		if(promptInfo.entry != undefined){
 			promptText = promptInfo.entry
@@ -107,39 +110,54 @@ const getRandomPrompt = () => {
 }
 
 const applyParamsToPrompt= (worldInfo) =>{
-  console.log(JSON.stringify(worldInfo))
+  console.log('applyParamsToPrompt='+JSON.stringify(worldInfo))
 	let entry=worldInfo.entry
 	if(!entry){
+		console.log('no entry')
 		return
 	}
 	if(!worldInfo){
+		console.log('no world info')
 		return worldInfo
 	}
 	if(!worldInfo.attributes){
+		console.log('no attributes')
 		return worldInfo
 	}
 	const keys = Object.keys(worldInfo.attributes)
 	if(!keys){
+		console.log('no keys')
 		return
 	}
-	for(key of Object.keys(worldInfo.attributes)){
-		console.log("value="+worldInfo.attributes[key])
+	for(let key of Object.keys(worldInfo.attributes)){
 		//chercher la clé dans le prompt. 
-		if(entry.includes(key)){
+		//if(entry.includes(key)){
+			console.log('key='+key)
 			let value=worldInfo.attributes[key]
+			let param=''
 			if(value){
 				if(value.startsWith(RANDOM_KEY)){
 					//extraire les clés
-					const keys = value.trim().split().shift()
-					getRandomDressByList(keys)
-					
+					const keys = value.replace(RANDOM_KEY,'').trim().split(',')
+					param = getRandomElemsByParamsList(keys,key)					
 				}
 				else{
-					entry = entry.replace(key,value)
+					param = value
+				}				
+				console.log('recherche de '+key+' dans entry '+entry)
+				if(entry?.includes(key)){
+					entry=entry.replace(key,param)
+					console.log('trouvé')
+				}
+				if(worldInfo.attributes.myrha_memory){
+					worldInfo.attributes.myrha_memory = worldInfo.attributes.myrha_memory.replace(key,param)
+				}
+				if(worldInfo.attributes.myrha_an){
+					worldInfo.attributes.myrha_an = worldInfo.attributes.myrha_an.replace(key,param)
 				}
 			}
-		}
-	}	
+		//}
+	}
 	worldInfo.entry=entry
 	return worldInfo
 }
@@ -179,18 +197,45 @@ const getRandomDress=(key) =>{
 	return result
 }
 
+const getRandomParam=(key, keyword) =>{
+	console.log('getRandomParam= key='+key+' keyword='+keyword)
+	const dressInfo = getRandomParamInfo(key, keyword)
+	let result=""
+	if(dressInfo){
+	  result=dressInfo.entry
+	}
+	return result
+}
+
 const getRandomDressByList=(keys) =>{
-	const dressesInfoList=[]
-	for(key of keys){
-		const dress=getRandomDress(key)
-		if(dress){
-			dressesInfoList.push(dress)
+	return getRandomElemsByParamsList(keys,DRESS_KEY)
+}
+
+const getRandomElemsByParamsList=(keysList, keyword) =>{
+	console.log('getRandomElemsByParamsList= key='+keysList+' keyword='+keyword+' key 2='+keysList[1])
+	const paramInfoList=[]
+	for(key of keysList){
+		const param=getRandomParam(key, keyword)
+		if(param){
+			paramInfoList.push(param)
 		}
 	}
-	const index = Math.floor((Math.random() * dressesInfoList.length));
+	const index = Math.floor((Math.random() * paramInfoList.length));
 	let result = null
-	if (index < dressesInfoList.length){
-		result = dressesInfoList[index];
+	if (index < paramInfoList.length){
+		result = paramInfoList[index];
+	}
+	return result
+}
+
+const getRandomParamInfo=(key, keyword) =>{
+	const dressRegex = getWorldInfoKeyRegex(keyword)
+	const specificRegex = getWorldInfoKeyRegex(key)
+	let promptInfoList = worldInfo?.filter(entry => entry.type.match(dressRegex))?.filter(entry => entry.type.match(specificRegex))
+	const index = Math.floor((Math.random() * promptInfoList.length));
+	let result = null
+	if (index < promptInfoList.length){
+		result = promptInfoList[index];
 	}
 	return result
 }
